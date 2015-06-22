@@ -10,6 +10,12 @@ as merge entire files together.
 Homepage  
 http://mstamy2.github.io/PyPDF2/
 
+## forked version
+
+`wkhtmltopdf`로 생성한 PDF 파일을 병합(merge)할 경우 예외가 발생하여 이 예외를 건너뛰게 패치한 버전이다. ([PyPDF2.utils.PdfReadError: Unexpected destination '/__WKANCHOR_2'](https://github.com/mstamy2/PyPDF2/issues/193))
+
+PyPDF2 raises an exception(`/__WKANCHOR_`) when merges PDFs that has been made by `wkhtmltopdf`. This version is patched for bypassing the exception. Just pass. :)
+
 ##Examples
 
 Please see `sample code` folder
