@@ -1347,7 +1347,7 @@ class PdfFileReader(object):
 
         return outlines
 
-    def getPageNumberByIndirect(self, indirectRef):
+    def _getPageNumberByIndirect(self, indirectRef):
         """Generate _pageId2Num"""
         if self._pageId2Num is None:
             id2num = {}
@@ -1373,7 +1373,7 @@ class PdfFileReader(object):
         :rtype: int
         """
         indirectRef = page.indirectRef
-        ret = self.getPageNumberByIndirect(indirectRef)
+        ret = self._getPageNumberByIndirect(indirectRef)
         return ret
 
     def getDestinationPageNumber(self, destination):
@@ -1387,7 +1387,7 @@ class PdfFileReader(object):
         :rtype: int
         """
         indirectRef = destination.page
-        ret = self.getPageNumberByIndirect(indirectRef)
+        ret = self._getPageNumberByIndirect(indirectRef)
         return ret
 
     def _buildDestination(self, title, array):
@@ -1413,7 +1413,7 @@ class PdfFileReader(object):
         if dest:
             if isinstance(dest, ArrayObject):
                 outline = self._buildDestination(title, dest)
-            elif isinstance(dest, Str) and dest in self._namedDests:
+            elif isString(dest) and dest in self._namedDests:
                 outline = self._namedDests[dest]
                 outline[NameObject("/Title")] = title
             elif isinstance(dest, NameObject):
@@ -2144,7 +2144,7 @@ class PageObject(DictionaryObject):
         page2Res = res2.get(resource, DictionaryObject()).getObject()
         renameRes = {}
         for key in list(page2Res.keys()):
-            if key in newRes and newRes[key] != page2Res[key]:
+            if key in newRes and newRes.raw_get(key) != page2Res.raw_get(key):
                 newname = NameObject(key + str(uuid.uuid4()))
                 renameRes[key] = newname
                 newRes[newname] = page2Res[key]
@@ -2698,25 +2698,29 @@ class ContentStream(DecodedStreamObject):
         assert tmp[:2] == b_("ID")
         data = b_("")
         while True:
+            # Read the inline image, while checking for EI (End Image) operator.
             tok = stream.read(1)
             if tok == b_("E"):
                 # Check for End Image
-                next1 = stream.read(1)
-                if next1 == b_("I"):
-                    next2 = readNonWhitespace(stream)
-                    if next2 == b_('Q'):
+                tok2 = stream.read(1)
+                if tok2 == b_("I"):
+                    # Sometimes that data will contain EI, so check for the Q operator.
+                    tok3 = stream.read(1)
+                    info = tok + tok2
+                    while tok3 in utils.WHITESPACES:
+                        info += tok3
+                        tok3 = stream.read(1)
+                    if tok3 == b_("Q"):
                         stream.seek(-1, 1)
                         break
                     else:
-                        stream.seek(-2, 1)
-                        data += tok
+                        stream.seek(-1,1)
+                        data += info
                 else:
                     stream.seek(-1, 1)
                     data += tok
             else:
                 data += tok
-        readNonWhitespace(stream)
-        stream.seek(-1, 1)
         return {"settings": settings, "data": data}
 
     def _getData(self):
