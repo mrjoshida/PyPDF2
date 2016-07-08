@@ -1418,8 +1418,8 @@ class PdfFileReader(object):
                 outline[NameObject("/Title")] = title
             elif isinstance(dest, NameObject):
                 pass
-            else:
-                raise utils.PdfReadError("Unexpected destination %r" % dest)
+            #else:
+            #    raise utils.PdfReadError("Unexpected destination %r" % dest)
         return outline
 
     pages = property(lambda self: ConvertFunctionsToVirtualList(self.getNumPages, self.getPage),
